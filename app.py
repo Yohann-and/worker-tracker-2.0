@@ -3,9 +3,9 @@ import io
 import base64
 import qrcode
 import logging
-from datetime import datetime
+from datetime import datetime, date
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
-from replit import db
+from models import db, Worker, Attendance
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -13,28 +13,29 @@ logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key_for_development")
 
-def init_db():
-    """Initialize database with required keys if they don't exist"""
-    if "workers" not in db:
-        db["workers"] = {}
-    if "attendance" not in db:
-        db["attendance"] = {}
+# Database configuration
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_recycle": 300,
+    "pool_pre_ping": True,
+}
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+# Initialize database
+db.init_app(app)
+
+# Create tables
+with app.app_context():
+    db.create_all()
 
 @app.route('/')
 def index():
     """Home page with navigation options"""
-    init_db()
-    workers = db["workers"]
-    worker_count = len(workers)
+    worker_count = Worker.query.count()
     
     # Get today's attendance count
-    today = datetime.now().strftime("%Y-%m-%d")
-    attendance_today = 0
-    attendance_records = db["attendance"]
-    
-    for worker_id, records in attendance_records.items():
-        if any(record['date'] == today for record in records):
-            attendance_today += 1
+    today = date.today()
+    attendance_today = Attendance.query.filter_by(date=today).count()
     
     return render_template('index.html', 
                          worker_count=worker_count, 
@@ -43,8 +44,6 @@ def index():
 @app.route('/add_worker', methods=['GET', 'POST'])
 def add_worker():
     """Add a new worker to the system"""
-    init_db()
-    
     if request.method == 'POST':
         matricule = request.form.get('matricule', '').strip()
         name = request.form.get('name', '').strip()
@@ -53,19 +52,16 @@ def add_worker():
             flash('Matricule et nom sont requis', 'error')
             return render_template('add_worker.html')
         
-        workers = db["workers"]
-        
-        if matricule in workers:
+        # Check if worker already exists
+        existing_worker = Worker.query.filter_by(matricule=matricule).first()
+        if existing_worker:
             flash('Un ouvrier avec ce matricule existe déjà', 'error')
             return render_template('add_worker.html')
         
         # Add worker to database
-        workers[matricule] = {
-            'name': name,
-            'matricule': matricule,
-            'created_at': datetime.now().isoformat()
-        }
-        db["workers"] = workers
+        new_worker = Worker(matricule=matricule, name=name)
+        db.session.add(new_worker)
+        db.session.commit()
         
         flash(f'Ouvrier {name} ajouté avec succès', 'success')
         return redirect(url_for('worker_qr', matricule=matricule))
@@ -75,21 +71,19 @@ def add_worker():
 @app.route('/view_workers')
 def view_workers():
     """View all workers in the system"""
-    init_db()
-    workers = db["workers"]
-    return render_template('view_workers.html', workers=workers)
+    workers = Worker.query.all()
+    # Convert to dictionary format for template compatibility
+    workers_dict = {worker.matricule: worker for worker in workers}
+    return render_template('view_workers.html', workers=workers_dict)
 
 @app.route('/worker_qr/<matricule>')
 def worker_qr(matricule):
     """Generate and display QR code for a worker"""
-    init_db()
-    workers = db["workers"]
+    worker = Worker.query.filter_by(matricule=matricule).first()
     
-    if matricule not in workers:
+    if not worker:
         flash('Ouvrier non trouvé', 'error')
         return redirect(url_for('view_workers'))
-    
-    worker = workers[matricule]
     
     # Generate QR code
     presence_url = request.url_root + f"presence/{matricule}"
@@ -120,106 +114,91 @@ def worker_qr(matricule):
 @app.route('/presence/<matricule>')
 def mark_presence(matricule):
     """Mark worker presence when QR code is scanned"""
-    init_db()
-    workers = db["workers"]
+    worker = Worker.query.filter_by(matricule=matricule).first()
     
-    if matricule not in workers:
+    if not worker:
         return render_template('presence_confirmation.html', 
                              success=False, 
                              message="Matricule non trouvé dans le système")
     
-    worker = workers[matricule]
     now = datetime.now()
-    date_str = now.strftime("%Y-%m-%d")
-    time_str = now.strftime("%H:%M:%S")
-    
-    # Get attendance records
-    attendance = db["attendance"]
-    
-    # Initialize worker attendance if doesn't exist
-    if matricule not in attendance:
-        attendance[matricule] = []
+    today = now.date()
+    current_time = now.time()
     
     # Check if already marked today
-    worker_attendance = attendance[matricule]
-    already_marked_today = any(record['date'] == date_str for record in worker_attendance)
+    existing_attendance = Attendance.query.filter_by(
+        worker_id=worker.id, 
+        date=today
+    ).first()
     
-    if already_marked_today:
+    if existing_attendance:
         return render_template('presence_confirmation.html',
                              success=False,
                              worker=worker,
                              message=f"Présence déjà enregistrée pour aujourd'hui")
     
     # Record attendance
-    attendance_record = {
-        'date': date_str,
-        'time': time_str,
-        'timestamp': now.isoformat(),
-        'worker_name': worker['name']
-    }
+    attendance_record = Attendance(
+        worker_id=worker.id,
+        date=today,
+        time=current_time
+    )
     
-    worker_attendance.append(attendance_record)
-    attendance[matricule] = worker_attendance
-    db["attendance"] = attendance
+    db.session.add(attendance_record)
+    db.session.commit()
     
     return render_template('presence_confirmation.html',
                          success=True,
                          worker=worker,
-                         time=time_str,
-                         date=date_str,
+                         time=current_time.strftime("%H:%M:%S"),
+                         date=today.strftime("%Y-%m-%d"),
                          message="Présence enregistrée avec succès!")
 
 @app.route('/attendance_log')
 def attendance_log():
     """View attendance log for all workers"""
-    init_db()
-    workers = db["workers"]
-    attendance = db["attendance"]
-    
     # Get date filter from query params
-    date_filter = request.args.get('date', datetime.now().strftime("%Y-%m-%d"))
+    date_filter = request.args.get('date', date.today().strftime("%Y-%m-%d"))
+    filter_date = datetime.strptime(date_filter, "%Y-%m-%d").date()
     
-    # Prepare attendance data for the specified date
+    # Get all workers with their attendance for the specified date
+    workers = Worker.query.all()
     attendance_data = []
     
-    for matricule, worker in workers.items():
-        worker_records = attendance.get(matricule, [])
-        # Find record for the specified date
-        day_record = next((record for record in worker_records if record['date'] == date_filter), None)
+    for worker in workers:
+        # Find attendance record for this worker on the specified date
+        attendance_record = Attendance.query.filter_by(
+            worker_id=worker.id,
+            date=filter_date
+        ).first()
         
         attendance_data.append({
-            'matricule': matricule,
-            'name': worker['name'],
-            'present': day_record is not None,
-            'time': day_record['time'] if day_record else None
+            'matricule': worker.matricule,
+            'name': worker.name,
+            'present': attendance_record is not None,
+            'time': attendance_record.time.strftime("%H:%M:%S") if attendance_record else None
         })
     
     # Sort by name
     attendance_data.sort(key=lambda x: x['name'])
     
+    present_count = sum(1 for record in attendance_data if record['present'])
+    
     return render_template('attendance_log.html', 
                          attendance_data=attendance_data,
                          selected_date=date_filter,
                          total_workers=len(workers),
-                         present_count=sum(1 for record in attendance_data if record['present']))
+                         present_count=present_count)
 
 @app.route('/delete_worker/<matricule>')
 def delete_worker(matricule):
     """Delete a worker from the system"""
-    init_db()
-    workers = db["workers"]
-    attendance = db["attendance"]
+    worker = Worker.query.filter_by(matricule=matricule).first()
     
-    if matricule in workers:
-        # Remove worker
-        del workers[matricule]
-        db["workers"] = workers
-        
-        # Remove attendance records
-        if matricule in attendance:
-            del attendance[matricule]
-            db["attendance"] = attendance
-        
+    if worker:
+        # Delete worker (cascade will handle attendance records)
+        db.session.delete(worker)
+        db.session.commit()
         flash('Ouvrier supprimé avec succès', 'success')
     else:
         flash('Ouvrier non trouvé', 'error')

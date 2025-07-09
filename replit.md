@@ -12,7 +12,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Backend Architecture
 - **Framework**: Flask web framework with Python
-- **Database**: Replit DB (key-value store) for data persistence
+- **Database**: PostgreSQL database with SQLAlchemy ORM
 - **Session Management**: Flask sessions with configurable secret key
 - **Logging**: Python's built-in logging module for debugging
 
@@ -23,10 +23,10 @@ Preferred communication style: Simple, everyday language.
 - **Language**: French UI for all user-facing elements
 
 ### Data Storage
-- **Primary Storage**: Replit DB with two main collections:
-  - `workers`: Stores worker information (matricule, name, creation date)
-  - `attendance`: Stores attendance records by worker ID with timestamps
-- **Data Structure**: JSON-like key-value pairs with nested objects
+- **Primary Storage**: PostgreSQL database with two main tables:
+  - `workers`: Stores worker information (id, matricule, name, created_at)
+  - `attendance`: Stores attendance records with foreign key relationship to workers
+- **Data Structure**: Relational database with proper foreign key constraints and unique constraints
 
 ## Key Components
 
@@ -57,8 +57,10 @@ Preferred communication style: Simple, everyday language.
 
 ### Python Libraries
 - **Flask**: Web framework for routing and request handling
+- **Flask-SQLAlchemy**: ORM for database operations
 - **qrcode**: QR code generation with PIL/Pillow for image processing
-- **replit**: Database integration for persistent storage
+- **Pillow**: Image processing library for QR code generation
+- **psycopg2-binary**: PostgreSQL database adapter
 - **base64/io**: Image encoding for QR code display
 
 ### Frontend Dependencies
@@ -68,6 +70,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Environment Variables
 - **SESSION_SECRET**: Flask session security (defaults to development key)
+- **DATABASE_URL**: PostgreSQL connection string for database access
 
 ## Deployment Strategy
 
@@ -78,9 +81,9 @@ Preferred communication style: Simple, everyday language.
 - **Static Assets**: Served directly by Flask for CSS and other static files
 
 ### Database Initialization
-- **Auto-setup**: Database collections are created automatically on first access
-- **Data Persistence**: Replit DB provides persistent storage across restarts
-- **No Migration Strategy**: Simple key-value structure doesn't require complex migrations
+- **Auto-setup**: Database tables are created automatically using SQLAlchemy
+- **Data Persistence**: PostgreSQL provides robust persistent storage with ACID properties
+- **Migration Strategy**: Uses SQLAlchemy models with automatic table creation
 
 ### Security Considerations
 - **Session Security**: Configurable secret key for session management

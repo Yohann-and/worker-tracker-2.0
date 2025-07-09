@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Accueil - Système de Surveillance{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="text-center mb-5">
+            <h1 class="display-4 mb-3">
+                <i class="fas fa-qrcode text-primary me-3"></i>
+                Système de Surveillance des Ouvriers
+            </h1>
+            <p class="lead text-muted">
+                Gérez la présence de vos ouvriers avec des QR codes et un suivi en temps réel
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-6">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+                <div class="display-1 text-info mb-3">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3 class="card-title">{{ worker_count }}</h3>
+                <p class="card-text text-muted">Ouvriers enregistrés</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+                <div class="display-1 text-success mb-3">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3 class="card-title">{{ attendance_today }}</h3>
+                <p class="card-text text-muted">Présences aujourd'hui</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h5 class="card-title mb-3">
+                    <i class="fas fa-user-plus text-primary me-2"></i>
+                    Ajouter un Ouvrier
+                </h5>
+                <p class="card-text text-muted mb-4">
+                    Enregistrez un nouvel ouvrier et générez son QR code de présence
+                </p>
+                <a href="{{ url_for('add_worker') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Ajouter
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h5 class="card-title mb-3">
+                    <i class="fas fa-users text-info me-2"></i>
+                    Gérer les Ouvriers
+                </h5>
+                <p class="card-text text-muted mb-4">
+                    Consultez la liste des ouvriers et leurs QR codes
+                </p>
+                <a href="{{ url_for('view_workers') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-eye me-2"></i>Voir la liste
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h5 class="card-title mb-3">
+                    <i class="fas fa-clipboard-list text-success me-2"></i>
+                    Journal de Présence
+                </h5>
+                <p class="card-text text-muted mb-4">
+                    Consultez les enregistrements de présence par date
+                </p>
+                <a href="{{ url_for('attendance_log') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-chart-line me-2"></i>Voir journal
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm bg-light">
+            <div class="card-body p-4">
+                <h5 class="card-title mb-3">
+                    <i class="fas fa-mobile-alt text-warning me-2"></i>
+                    Comment scanner
+                </h5>
+                <p class="card-text text-muted mb-4">
+                    Utilisez n'importe quelle app de scan QR sur smartphone
+                </p>
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Le scan ouvre automatiquement l'URL de présence
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

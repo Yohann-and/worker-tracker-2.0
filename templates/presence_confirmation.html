@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Confirmation Présence - Système de Surveillance{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-5 text-center">
+                {% if success %}
+                    <div class="display-1 text-success mb-4">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h2 class="text-success mb-3">Présence Enregistrée!</h2>
+                    
+                    {% if worker %}
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title text-primary">{{ worker.name }}</h5>
+                            <p class="card-text">
+                                <strong>Matricule:</strong> {{ worker.matricule }}<br>
+                                <strong>Date:</strong> {{ date }}<br>
+                                <strong>Heure:</strong> {{ time }}
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <p class="lead text-muted mb-4">{{ message }}</p>
+                    
+                    <div class="alert alert-success">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Votre présence a été enregistrée avec succès dans le système.
+                    </div>
+                {% else %}
+                    <div class="display-1 text-danger mb-4">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h2 class="text-danger mb-3">Erreur d'Enregistrement</h2>
+                    
+                    {% if worker %}
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ worker.name }}</h5>
+                            <p class="card-text">
+                                <strong>Matricule:</strong> {{ worker.matricule }}
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <p class="lead text-muted mb-4">{{ message }}</p>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        {% if worker %}
+                            Veuillez contacter votre superviseur si le problème persiste.
+                        {% else %}
+                            Vérifiez que vous utilisez le bon QR code.
+                        {% endif %}
+                    </div>
+                {% endif %}
+                
+                <div class="mt-4">
+                    <button onclick="window.close()" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-times me-2"></i>
+                        Fermer
+                    </button>
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">
+                        <i class="fas fa-home me-2"></i>
+                        Retour à l'accueil
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-close after successful scan (optional)
+{% if success %}
+setTimeout(function() {
+    if (window.history.length > 1) {
+        window.close();
+    }
+}, 5000); // Close after 5 seconds
+{% endif %}
+</script>
+{% endblock %}

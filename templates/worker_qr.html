@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}QR Code - {{ worker.name }} - Système de Surveillance{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white text-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-qrcode me-2"></i>
+                    QR Code de Présence
+                </h4>
+            </div>
+            <div class="card-body p-4 text-center">
+                <div class="mb-4">
+                    <h5 class="text-primary">{{ worker.name }}</h5>
+                    <p class="text-muted mb-0">Matricule: {{ worker.matricule }}</p>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="qr-code-container bg-white rounded p-3 d-inline-block">
+                        <img src="data:image/png;base64,{{ qr_code }}" 
+                             alt="QR Code pour {{ worker.name }}" 
+                             class="img-fluid"
+                             style="max-width: 250px;">
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-mobile-alt me-2"></i>
+                        Instructions d'utilisation
+                    </h6>
+                    <ol class="mb-0 text-start">
+                        <li>Scannez ce QR code avec n'importe quelle application de scan QR</li>
+                        <li>Le lien s'ouvrira automatiquement dans votre navigateur</li>
+                        <li>La présence sera enregistrée instantanément</li>
+                        <li>Un message de confirmation apparaîtra</li>
+                    </ol>
+                </div>
+                
+                <div class="mb-4">
+                    <p class="small text-muted">URL de présence:</p>
+                    <code class="small">{{ presence_url }}</code>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button onclick="window.print()" class="btn btn-outline-primary">
+                        <i class="fas fa-print me-2"></i>
+                        Imprimer QR Code
+                    </button>
+                    <a href="{{ url_for('view_workers') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Retour à la liste
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .navbar, .btn, .alert, .card-header, .card-footer {
+        display: none !important;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    .card-body {
+        padding: 0 !important;
+    }
+    
+    body {
+        background: white !important;
+    }
+}
+</style>
+{% endblock %}

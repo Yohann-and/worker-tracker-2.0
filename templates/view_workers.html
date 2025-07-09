@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Liste des Ouvriers - Système de Surveillance{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="fas fa-users text-primary me-2"></i>
+        Liste des Ouvriers
+    </h2>
+    <a href="{{ url_for('add_worker') }}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>
+        Ajouter Ouvrier
+    </a>
+</div>
+
+{% if workers %}
+    <div class="row g-4">
+        {% for matricule, worker in workers.items() %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-1">{{ worker.name }}</h5>
+                            <p class="card-text text-muted mb-0">
+                                <small>Matricule: {{ worker.matricule }}</small>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('worker_qr', matricule=matricule) }}" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-qrcode me-2"></i>
+                            Voir QR Code
+                        </a>
+                        <a href="{{ url_for('delete_worker', matricule=matricule) }}" 
+                           class="btn btn-outline-danger btn-sm"
+                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet ouvrier ?')">
+                            <i class="fas fa-trash me-2"></i>
+                            Supprimer
+                        </a>
+                    </div>
+                </div>
+                <div class="card-footer text-muted">
+                    <small>
+                        <i class="fas fa-calendar me-1"></i>
+                        Ajouté le {{ worker.created_at[:10] if worker.created_at else 'Date inconnue' }}
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-5">
+        <div class="display-1 text-muted mb-3">
+            <i class="fas fa-users-slash"></i>
+        </div>
+        <h3 class="text-muted">Aucun ouvrier enregistré</h3>
+        <p class="text-muted mb-4">
+            Commencez par ajouter votre premier ouvrier au système
+        </p>
+        <a href="{{ url_for('add_worker') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>
+            Ajouter le Premier Ouvrier
+        </a>
+    </div>
+{% endif %}
+{% endblock %}

@@ -28,6 +28,15 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
+# Template filter for date formatting
+@app.template_filter('dateformat')
+def dateformat(value, format='%Y-%m-%d'):
+    if value is None:
+        return "Date inconnue"
+    if isinstance(value, str):
+        return value[:10]  # For string dates
+    return value.strftime(format)
+
 @app.route('/')
 def index():
     """Home page with navigation options"""

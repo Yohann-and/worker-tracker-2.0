@@ -49,7 +49,7 @@
                 <div class="card-footer text-muted">
                     <small>
                         <i class="fas fa-calendar me-1"></i>
-                        Ajouté le {{ worker.created_at[:10] if worker.created_at else 'Date inconnue' }}
+                        Ajouté le {{ worker.created_at.strftime('%Y-%m-%d') if worker.created_at else 'Date inconnue' }}
                     </small>
                 </div>
             </div>
